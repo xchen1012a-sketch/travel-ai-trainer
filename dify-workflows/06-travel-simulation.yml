@@ -1,0 +1,274 @@
+app:
+  description: 轻量数字孪生旅行模拟工作流，用于按行程节点生成体验反馈、客户反应和教学评分信号。
+  icon: 🗺️
+  icon_background: '#EFEAFF'
+  mode: workflow
+  name: 轻量数字孪生旅行模拟工作流
+  use_icon_as_answer_icon: false
+dependencies:
+  - current_identifier: null
+    type: marketplace
+    value:
+      marketplace_plugin_unique_identifier: langgenius/openai:0.2.3@5a7f82fa86e28332ad51941d0b491c1e8a38ead539656442f7bf4c6129cd15fa
+kind: app
+version: 0.3.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions: []
+      allowed_file_types: []
+      allowed_file_upload_methods: []
+      enabled: false
+      fileUploadConfig:
+        audio_file_size_limit: 0
+        batch_count_limit: 0
+        file_size_limit: 0
+        image_file_size_limit: 0
+        video_file_size_limit: 0
+        workflow_file_upload_limit: 0
+      image:
+        enabled: false
+        number_limits: 0
+        transfer_methods: []
+    number_limits: 0
+    opening_statement: ''
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+      - id: start_to_llm
+        source: start_node
+        sourceHandle: source
+        target: llm_node
+        targetHandle: target
+        type: custom
+        data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: start
+          targetType: llm
+      - id: llm_to_end
+        source: llm_node
+        sourceHandle: source
+        target: end_node
+        targetHandle: target
+        type: custom
+        data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: llm
+          targetType: end
+    nodes:
+      - data:
+          desc: 接收行程、当前节点、客户画像、学生动作和模拟状态。
+          selected: false
+          title: 开始
+          type: start
+          variables:
+            - label: 路线名称
+              max_length: 200
+              options: []
+              required: true
+              type: text-input
+              variable: route_name
+            - label: 完整行程
+              max_length: 12000
+              options: []
+              required: true
+              type: paragraph
+              variable: itinerary
+            - label: 当前节点名称
+              max_length: 200
+              options: []
+              required: true
+              type: text-input
+              variable: node_name
+            - label: 当前节点序号
+              max_length: 80
+              options: []
+              required: false
+              type: text-input
+              variable: node_index
+            - label: 客户画像
+              max_length: 2000
+              options: []
+              required: true
+              type: paragraph
+              variable: customer_profile
+            - label: 学生动作或回答
+              max_length: 4000
+              options: []
+              required: true
+              type: paragraph
+              variable: student_action
+            - label: 当前模拟状态
+              max_length: 8000
+              options: []
+              required: false
+              type: paragraph
+              variable: simulation_state
+            - label: 产品上下文
+              max_length: 10000
+              options: []
+              required: false
+              type: paragraph
+              variable: product_context
+            - label: 学习目标
+              max_length: 1000
+              options: []
+              required: false
+              type: paragraph
+              variable: learning_goal
+          x-outputs:
+            - name: route_name
+              type: string
+            - name: itinerary
+              type: string
+            - name: node_name
+              type: string
+            - name: node_index
+              type: string
+            - name: customer_profile
+              type: string
+            - name: student_action
+              type: string
+            - name: simulation_state
+              type: string
+            - name: product_context
+              type: string
+            - name: learning_goal
+              type: string
+        height: 118
+        id: start_node
+        position:
+          x: 0
+          y: 0
+        positionAbsolute:
+          x: 0
+          y: 0
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          context:
+            enabled: false
+            variable_selector: []
+          desc: 生成当前旅行节点的体验、客户反馈、下一步事件和状态更新。
+          model:
+            completion_params:
+              temperature: 0.45
+            mode: chat
+            name: gpt-4o-mini
+            provider: langgenius/openai/openai
+          prompt_template:
+            - id: system_prompt
+              role: system
+              text: |-
+                你是旅游销售培训中的轻量数字孪生旅行模拟器。你不做 3D 场景，而是用行程节点、体验标签、客户反馈和事件推进帮助学生理解产品真实体验。
+
+                模拟规则：
+                1. 每次只处理当前节点，不一次性生成完整旅行。
+                2. 客户反馈必须符合客户画像、当前节点和学生动作。
+                3. 既要呈现体验，也要暴露销售前沟通不足可能造成的问题。
+                4. 不编造输入之外的精确价格、酒店名称、政策条款。
+                5. 输出要方便前端渲染成节点卡片和状态面板。
+                6. 输出中文。
+            - id: user_prompt
+              role: user
+              text: |-
+                路线名称：{{#start_node.route_name#}}
+                当前节点：{{#start_node.node_index#}} - {{#start_node.node_name#}}
+
+                完整行程：
+                {{#start_node.itinerary#}}
+
+                产品上下文：
+                {{#start_node.product_context#}}
+
+                客户画像：
+                {{#start_node.customer_profile#}}
+
+                当前模拟状态：
+                {{#start_node.simulation_state#}}
+
+                学习目标：
+                {{#start_node.learning_goal#}}
+
+                学生动作或回答：
+                {{#start_node.student_action#}}
+
+                请输出：
+                1. 节点场景卡：时间、地点、体验标签、客户此刻关注点
+                2. 客户即时反馈：用客户口吻说 1 到 3 句话
+                3. 体验风险：学生前期如果没有说明清楚，可能出现什么不满
+                4. 推进事件：下一步发生什么
+                5. 状态更新：满意度、疲劳度、信任度、需求清晰度的变化
+                6. 教学评分信号：学生做得好的点和需要改进的点
+                7. 下一轮建议追问或回应：一句话
+          selected: false
+          title: 生成旅行节点模拟
+          type: llm
+          variables: []
+          vision:
+            enabled: false
+          x-outputs:
+            - name: text
+              type: string
+        height: 98
+        id: llm_node
+        position:
+          x: 320
+          y: 0
+        positionAbsolute:
+          x: 320
+          y: 0
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          desc: 输出当前旅行模拟节点结果。
+          outputs:
+            - value_selector:
+                - llm_node
+                - text
+              variable: simulation_result
+          selected: false
+          title: 结束
+          type: end
+          x-outputs:
+            - name: simulation_result
+              type: string
+        height: 90
+        id: end_node
+        position:
+          x: 640
+          y: 0
+        positionAbsolute:
+          x: 640
+          y: 0
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+    viewport:
+      x: 0
+      y: 0
+      zoom: 1

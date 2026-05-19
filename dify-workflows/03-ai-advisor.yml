@@ -1,0 +1,274 @@
+app:
+  description: 旅游销售 AI 参谋工作流，用于分析客户需求并判断跟团、定制或自由行组合建议。
+  icon: 🧭
+  icon_background: '#EAF8EF'
+  mode: workflow
+  name: AI 参谋工作流
+  use_icon_as_answer_icon: false
+dependencies:
+  - current_identifier: null
+    type: marketplace
+    value:
+      marketplace_plugin_unique_identifier: langgenius/openai:0.2.3@5a7f82fa86e28332ad51941d0b491c1e8a38ead539656442f7bf4c6129cd15fa
+kind: app
+version: 0.3.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions: []
+      allowed_file_types: []
+      allowed_file_upload_methods: []
+      enabled: false
+      fileUploadConfig:
+        audio_file_size_limit: 0
+        batch_count_limit: 0
+        file_size_limit: 0
+        image_file_size_limit: 0
+        video_file_size_limit: 0
+        workflow_file_upload_limit: 0
+      image:
+        enabled: false
+        number_limits: 0
+        transfer_methods: []
+    number_limits: 0
+    opening_statement: ''
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+      - id: start_to_llm
+        source: start_node
+        sourceHandle: source
+        target: llm_node
+        targetHandle: target
+        type: custom
+        data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: start
+          targetType: llm
+      - id: llm_to_end
+        source: llm_node
+        sourceHandle: source
+        target: end_node
+        targetHandle: target
+        type: custom
+        data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: llm
+          targetType: end
+    nodes:
+      - data:
+          desc: 接收学生挖掘出的客户需求、预算、产品候选和历史对话。
+          selected: false
+          title: 开始
+          type: start
+          variables:
+            - label: 客户画像
+              max_length: 2000
+              options: []
+              required: false
+              type: paragraph
+              variable: customer_profile
+            - label: 已挖掘需求
+              max_length: 4000
+              options: []
+              required: true
+              type: paragraph
+              variable: discovered_needs
+            - label: 预算
+              max_length: 500
+              options: []
+              required: false
+              type: text-input
+              variable: budget
+            - label: 出行时间
+              max_length: 500
+              options: []
+              required: false
+              type: text-input
+              variable: travel_time
+            - label: 同行人
+              max_length: 1000
+              options: []
+              required: false
+              type: paragraph
+              variable: companions
+            - label: 目的地偏好
+              max_length: 1000
+              options: []
+              required: false
+              type: paragraph
+              variable: destination_preferences
+            - label: 限制与顾虑
+              max_length: 2000
+              options: []
+              required: false
+              type: paragraph
+              variable: constraints
+            - label: 可选产品
+              max_length: 10000
+              options: []
+              required: false
+              type: paragraph
+              variable: product_options
+            - label: 历史对话
+              max_length: 10000
+              options: []
+              required: false
+              type: paragraph
+              variable: conversation_history
+          x-outputs:
+            - name: customer_profile
+              type: string
+            - name: discovered_needs
+              type: string
+            - name: budget
+              type: string
+            - name: travel_time
+              type: string
+            - name: companions
+              type: string
+            - name: destination_preferences
+              type: string
+            - name: constraints
+              type: string
+            - name: product_options
+              type: string
+            - name: conversation_history
+              type: string
+        height: 118
+        id: start_node
+        position:
+          x: 0
+          y: 0
+        positionAbsolute:
+          x: 0
+          y: 0
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          context:
+            enabled: false
+            variable_selector: []
+          desc: 判断客户适合的旅行组织方式并给出销售建议。
+          model:
+            completion_params:
+              temperature: 0.2
+            mode: chat
+            name: gpt-4o-mini
+            provider: langgenius/openai/openai
+          prompt_template:
+            - id: system_prompt
+              role: system
+              text: |-
+                你是旅游销售训练中的 AI 参谋，帮助学生判断客户更适合跟团游、定制游还是自由行组合。
+
+                判断原则：
+                1. 综合预算、同行人、旅行经验、时间弹性、目的地复杂度、风险承受能力和服务期待。
+                2. 不把高价等同于更好；要解释取舍。
+                3. 对亲子、银发、蜜月、毕业、团建等需求要考虑真实体验。
+                4. 如果信息不足，先列出关键缺口，再给暂定建议。
+                5. 不编造不存在的产品细节。
+                6. 输出中文，结构清楚，便于学生直接学习。
+            - id: user_prompt
+              role: user
+              text: |-
+                客户画像：
+                {{#start_node.customer_profile#}}
+
+                已挖掘需求：
+                {{#start_node.discovered_needs#}}
+
+                预算：{{#start_node.budget#}}
+                出行时间：{{#start_node.travel_time#}}
+                同行人：
+                {{#start_node.companions#}}
+
+                目的地偏好：
+                {{#start_node.destination_preferences#}}
+
+                限制与顾虑：
+                {{#start_node.constraints#}}
+
+                可选产品：
+                {{#start_node.product_options#}}
+
+                历史对话：
+                {{#start_node.conversation_history#}}
+
+                请输出：
+                1. 推荐结论：跟团游 / 定制游 / 自由行组合 / 继续追问
+                2. 推荐理由：至少 3 条
+                3. 风险提醒：客户可能不满意的点
+                4. 还需要追问的问题：最多 5 个
+                5. 给学生的下一句话建议：一句自然销售表达
+          selected: false
+          title: 需求参谋分析
+          type: llm
+          variables: []
+          vision:
+            enabled: false
+          x-outputs:
+            - name: text
+              type: string
+        height: 98
+        id: llm_node
+        position:
+          x: 320
+          y: 0
+        positionAbsolute:
+          x: 320
+          y: 0
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          desc: 输出参谋建议。
+          outputs:
+            - value_selector:
+                - llm_node
+                - text
+              variable: advisor_result
+          selected: false
+          title: 结束
+          type: end
+          x-outputs:
+            - name: advisor_result
+              type: string
+        height: 90
+        id: end_node
+        position:
+          x: 640
+          y: 0
+        positionAbsolute:
+          x: 640
+          y: 0
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+    viewport:
+      x: 0
+      y: 0
+      zoom: 1

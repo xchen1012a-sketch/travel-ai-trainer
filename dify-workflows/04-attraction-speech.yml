@@ -1,0 +1,265 @@
+app:
+  description: 景点标签与销售话术生成工作流，用于把景点体验、地理类型和历史人文特点转成可教学话术。
+  icon: 🏞️
+  icon_background: '#E9F7FF'
+  mode: workflow
+  name: 景点标签与话术生成工作流
+  use_icon_as_answer_icon: false
+dependencies:
+  - current_identifier: null
+    type: marketplace
+    value:
+      marketplace_plugin_unique_identifier: langgenius/openai:0.2.3@5a7f82fa86e28332ad51941d0b491c1e8a38ead539656442f7bf4c6129cd15fa
+kind: app
+version: 0.3.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions: []
+      allowed_file_types: []
+      allowed_file_upload_methods: []
+      enabled: false
+      fileUploadConfig:
+        audio_file_size_limit: 0
+        batch_count_limit: 0
+        file_size_limit: 0
+        image_file_size_limit: 0
+        video_file_size_limit: 0
+        workflow_file_upload_limit: 0
+      image:
+        enabled: false
+        number_limits: 0
+        transfer_methods: []
+    number_limits: 0
+    opening_statement: ''
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+      - id: start_to_llm
+        source: start_node
+        sourceHandle: source
+        target: llm_node
+        targetHandle: target
+        type: custom
+        data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: start
+          targetType: llm
+      - id: llm_to_end
+        source: llm_node
+        sourceHandle: source
+        target: end_node
+        targetHandle: target
+        type: custom
+        data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: llm
+          targetType: end
+    nodes:
+      - data:
+          desc: 接收景点基础信息、分类标签和客户经验度。
+          selected: false
+          title: 开始
+          type: start
+          variables:
+            - label: 景点名称
+              max_length: 120
+              options: []
+              required: true
+              type: text-input
+              variable: attraction_name
+            - label: 景点基础信息
+              max_length: 8000
+              options: []
+              required: true
+              type: paragraph
+              variable: attraction_basic_info
+            - label: 地理类型
+              max_length: 500
+              options: []
+              required: false
+              type: text-input
+              variable: geography_type
+            - label: 历史人文标签
+              max_length: 1000
+              options: []
+              required: false
+              type: paragraph
+              variable: culture_tags
+            - label: 客户旅游经验度
+              max_length: 80
+              options: []
+              required: false
+              type: text-input
+              variable: customer_experience_level
+            - label: 客户场景
+              max_length: 1000
+              options: []
+              required: false
+              type: paragraph
+              variable: customer_scene
+            - label: 销售目标
+              max_length: 1000
+              options: []
+              required: false
+              type: paragraph
+              variable: selling_goal
+            - label: 课程上下文
+              max_length: 6000
+              options: []
+              required: false
+              type: paragraph
+              variable: course_context
+          x-outputs:
+            - name: attraction_name
+              type: string
+            - name: attraction_basic_info
+              type: string
+            - name: geography_type
+              type: string
+            - name: culture_tags
+              type: string
+            - name: customer_experience_level
+              type: string
+            - name: customer_scene
+              type: string
+            - name: selling_goal
+              type: string
+            - name: course_context
+              type: string
+        height: 118
+        id: start_node
+        position:
+          x: 0
+          y: 0
+        positionAbsolute:
+          x: 0
+          y: 0
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          context:
+            enabled: false
+            variable_selector: []
+          desc: 生成景点标签、体验迁移和分层销售话术。
+          model:
+            completion_params:
+              temperature: 0.35
+            mode: chat
+            name: gpt-4o-mini
+            provider: langgenius/openai/openai
+          prompt_template:
+            - id: system_prompt
+              role: system
+              text: |-
+                你是旅游销售培训中的景点话术教练。你的任务是把景点从“书本介绍”转成“客户能理解的体验表达”。
+
+                分类框架：
+                1. 景点大类：风景类、历史人文类、风景与历史人文兼具。
+                2. 风景类可按地理体验拆分：山、海、湖、戈壁、沙漠、田野、森林等。
+                3. 话术要能帮助学生把少量亲身经历迁移到同类景点，例如从华山的山岳体验迁移到衡山，再补充衡山的道教文化特点。
+
+                规则：
+                - 不编造无法确定的历史事实、门票价格和政策。
+                - 根据客户旅游经验度调整话术：低经验客户重画面感，高经验客户重差异化。
+                - 输出中文，便于直接进入课程资料库。
+            - id: user_prompt
+              role: user
+              text: |-
+                景点名称：{{#start_node.attraction_name#}}
+                地理类型：{{#start_node.geography_type#}}
+                历史人文标签：
+                {{#start_node.culture_tags#}}
+
+                景点基础信息：
+                {{#start_node.attraction_basic_info#}}
+
+                客户旅游经验度：{{#start_node.customer_experience_level#}}
+                客户场景：
+                {{#start_node.customer_scene#}}
+
+                销售目标：
+                {{#start_node.selling_goal#}}
+
+                课程上下文：
+                {{#start_node.course_context#}}
+
+                请输出：
+                1. 景点分类标签：大类、地理体验、人文体验、适合人群
+                2. 体验迁移说明：学生可以从哪些已有经历类比理解
+                3. 核心卖点：3 到 5 条
+                4. 低经验客户话术：30 秒版
+                5. 高经验客户话术：30 秒版
+                6. 当前客户场景话术：90 秒版
+                7. 学生追问客户的问题：最多 5 个
+          selected: false
+          title: 生成景点话术
+          type: llm
+          variables: []
+          vision:
+            enabled: false
+          x-outputs:
+            - name: text
+              type: string
+        height: 98
+        id: llm_node
+        position:
+          x: 320
+          y: 0
+        positionAbsolute:
+          x: 320
+          y: 0
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          desc: 输出景点标签和话术。
+          outputs:
+            - value_selector:
+                - llm_node
+                - text
+              variable: speech_result
+          selected: false
+          title: 结束
+          type: end
+          x-outputs:
+            - name: speech_result
+              type: string
+        height: 90
+        id: end_node
+        position:
+          x: 640
+          y: 0
+        positionAbsolute:
+          x: 640
+          y: 0
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+    viewport:
+      x: 0
+      y: 0
+      zoom: 1

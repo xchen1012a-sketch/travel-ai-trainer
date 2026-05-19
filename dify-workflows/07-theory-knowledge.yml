@@ -1,0 +1,259 @@
+app:
+  description: 教学理论知识查询工作流，用于依据教材、课程资料、评分标准和知识库片段回答概念、原理、方法和规范类问题。
+  icon: 📚
+  icon_background: '#F0F5FF'
+  mode: workflow
+  name: 理论知识查询工作流
+  use_icon_as_answer_icon: false
+dependencies:
+  - current_identifier: null
+    type: marketplace
+    value:
+      marketplace_plugin_unique_identifier: langgenius/openai:0.2.3@5a7f82fa86e28332ad51941d0b491c1e8a38ead539656442f7bf4c6129cd15fa
+kind: app
+version: 0.3.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions: []
+      allowed_file_types: []
+      allowed_file_upload_methods: []
+      enabled: false
+      fileUploadConfig:
+        audio_file_size_limit: 0
+        batch_count_limit: 0
+        file_size_limit: 0
+        image_file_size_limit: 0
+        video_file_size_limit: 0
+        workflow_file_upload_limit: 0
+      image:
+        enabled: false
+        number_limits: 0
+        transfer_methods: []
+    number_limits: 0
+    opening_statement: ''
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+      - id: start_to_llm
+        source: start_node
+        sourceHandle: source
+        target: llm_node
+        targetHandle: target
+        type: custom
+        data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: start
+          targetType: llm
+      - id: llm_to_end
+        source: llm_node
+        sourceHandle: source
+        target: end_node
+        targetHandle: target
+        type: custom
+        data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: llm
+          targetType: end
+    nodes:
+      - data:
+          desc: 接收理论问题、课程资料片段和期望输出深度。
+          selected: false
+          title: 开始
+          type: start
+          variables:
+            - label: 课程名称
+              max_length: 120
+              options: []
+              required: true
+              type: text-input
+              variable: course_name
+            - label: 知识主题
+              max_length: 200
+              options: []
+              required: false
+              type: text-input
+              variable: theory_topic
+            - label: 理论问题
+              max_length: 4000
+              options: []
+              required: true
+              type: paragraph
+              variable: theory_question
+            - label: 教材或知识库片段
+              max_length: 16000
+              options: []
+              required: false
+              type: paragraph
+              variable: knowledge_context
+            - label: 教学阶段
+              max_length: 200
+              options: []
+              required: false
+              type: text-input
+              variable: learning_stage
+            - label: 输出深度
+              max_length: 80
+              options: []
+              required: false
+              type: text-input
+              variable: answer_depth
+            - label: 是否需要案例
+              max_length: 80
+              options: []
+              required: false
+              type: text-input
+              variable: need_examples
+            - label: 参考来源名称
+              max_length: 1000
+              options: []
+              required: false
+              type: paragraph
+              variable: source_names
+          x-outputs:
+            - name: course_name
+              type: string
+            - name: theory_topic
+              type: string
+            - name: theory_question
+              type: string
+            - name: knowledge_context
+              type: string
+            - name: learning_stage
+              type: string
+            - name: answer_depth
+              type: string
+            - name: need_examples
+              type: string
+            - name: source_names
+              type: string
+        height: 118
+        id: start_node
+        position:
+          x: 0
+          y: 0
+        positionAbsolute:
+          x: 0
+          y: 0
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          context:
+            enabled: false
+            variable_selector: []
+          desc: 严格依据理论资料回答概念、原则、方法和规范类问题。
+          model:
+            completion_params:
+              temperature: 0.18
+            mode: chat
+            name: gpt-4o-mini
+            provider: langgenius/openai/openai
+          prompt_template:
+            - id: system_prompt
+              role: system
+              text: |-
+                你是教学平台中的理论知识查询助手，专门回答课程概念、行业理论、服务原则、销售方法、评分标准和规范要求。
+
+                回答规则：
+                1. 优先依据“教材或知识库片段”回答。
+                2. 如果资料片段没有覆盖问题，要明确说“当前资料未直接说明”，再给出谨慎的通用解释。
+                3. 区分“理论定义”“实践应用”“考试/评分要点”，不要混在一起。
+                4. 不编造教材章节、法律条文、学校制度、产品政策或数据来源。
+                5. 需要案例时，案例必须贴近旅游销售培训场景。
+                6. 输出中文，结构稳定，适合前端直接展示。
+            - id: user_prompt
+              role: user
+              text: |-
+                课程名称：{{#start_node.course_name#}}
+                知识主题：{{#start_node.theory_topic#}}
+                教学阶段：{{#start_node.learning_stage#}}
+                输出深度：{{#start_node.answer_depth#}}
+                是否需要案例：{{#start_node.need_examples#}}
+                参考来源名称：
+                {{#start_node.source_names#}}
+
+                教材或知识库片段：
+                {{#start_node.knowledge_context#}}
+
+                理论问题：
+                {{#start_node.theory_question#}}
+
+                请输出：
+                1. 简明结论
+                2. 理论定义或核心概念
+                3. 关键要点
+                4. 旅游销售中的应用方式
+                5. 常见误区
+                6. 若资料不足，请列出缺失信息
+                7. 可用于课堂提问的 3 个检查题
+          selected: false
+          title: 理论知识回答
+          type: llm
+          variables: []
+          vision:
+            enabled: false
+          x-outputs:
+            - name: text
+              type: string
+        height: 98
+        id: llm_node
+        position:
+          x: 320
+          y: 0
+        positionAbsolute:
+          x: 320
+          y: 0
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          desc: 输出理论知识查询结果。
+          outputs:
+            - value_selector:
+                - llm_node
+                - text
+              variable: theory_answer
+          selected: false
+          title: 结束
+          type: end
+          x-outputs:
+            - name: theory_answer
+              type: string
+        height: 90
+        id: end_node
+        position:
+          x: 640
+          y: 0
+        positionAbsolute:
+          x: 640
+          y: 0
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+    viewport:
+      x: 0
+      y: 0
+      zoom: 1

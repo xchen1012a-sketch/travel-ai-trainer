@@ -1,0 +1,259 @@
+app:
+  description: 旅游销售训练中的 AI 模拟客户工作流，用于角色对练、需求模糊化和异议反馈。
+  icon: 🧑‍💼
+  icon_background: '#FFF1E6'
+  mode: workflow
+  name: AI 模拟客户工作流
+  use_icon_as_answer_icon: false
+dependencies:
+  - current_identifier: null
+    type: marketplace
+    value:
+      marketplace_plugin_unique_identifier: langgenius/openai:0.2.3@5a7f82fa86e28332ad51941d0b491c1e8a38ead539656442f7bf4c6129cd15fa
+kind: app
+version: 0.3.0
+workflow:
+  conversation_variables: []
+  environment_variables: []
+  features:
+    file_upload:
+      allowed_file_extensions: []
+      allowed_file_types: []
+      allowed_file_upload_methods: []
+      enabled: false
+      fileUploadConfig:
+        audio_file_size_limit: 0
+        batch_count_limit: 0
+        file_size_limit: 0
+        image_file_size_limit: 0
+        video_file_size_limit: 0
+        workflow_file_upload_limit: 0
+      image:
+        enabled: false
+        number_limits: 0
+        transfer_methods: []
+    number_limits: 0
+    opening_statement: ''
+    retriever_resource:
+      enabled: false
+    sensitive_word_avoidance:
+      enabled: false
+    speech_to_text:
+      enabled: false
+    suggested_questions: []
+    suggested_questions_after_answer:
+      enabled: false
+    text_to_speech:
+      enabled: false
+      language: ''
+      voice: ''
+  graph:
+    edges:
+      - id: start_to_llm
+        source: start_node
+        sourceHandle: source
+        target: llm_node
+        targetHandle: target
+        type: custom
+        data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: start
+          targetType: llm
+      - id: llm_to_end
+        source: llm_node
+        sourceHandle: source
+        target: end_node
+        targetHandle: target
+        type: custom
+        data:
+          isInIteration: false
+          isInLoop: false
+          sourceType: llm
+          targetType: end
+    nodes:
+      - data:
+          desc: 接收客户画像、训练目标、历史对话和学生最新话术。
+          selected: false
+          title: 开始
+          type: start
+          variables:
+            - label: 训练场景
+              max_length: 500
+              options: []
+              required: true
+              type: paragraph
+              variable: scenario
+            - label: 客户画像
+              max_length: 2000
+              options: []
+              required: true
+              type: paragraph
+              variable: customer_profile
+            - label: 训练目标
+              max_length: 500
+              options: []
+              required: false
+              type: paragraph
+              variable: training_goal
+            - label: 难度
+              max_length: 80
+              options: []
+              required: false
+              type: text-input
+              variable: difficulty
+            - label: 辅导模式
+              max_length: 80
+              options: []
+              required: false
+              type: text-input
+              variable: coaching_mode
+            - label: 历史对话
+              max_length: 10000
+              options: []
+              required: false
+              type: paragraph
+              variable: conversation_history
+            - label: 学生最新表达
+              max_length: 4000
+              options: []
+              required: true
+              type: paragraph
+              variable: student_message
+          x-outputs:
+            - name: scenario
+              type: string
+            - name: customer_profile
+              type: string
+            - name: training_goal
+              type: string
+            - name: difficulty
+              type: string
+            - name: coaching_mode
+              type: string
+            - name: conversation_history
+              type: string
+            - name: student_message
+              type: string
+        height: 118
+        id: start_node
+        position:
+          x: 0
+          y: 0
+        positionAbsolute:
+          x: 0
+          y: 0
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          context:
+            enabled: false
+            variable_selector: []
+          desc: 生成符合画像的客户回复，并给出可选教学信号。
+          model:
+            completion_params:
+              temperature: 0.55
+            mode: chat
+            name: gpt-4o-mini
+            provider: langgenius/openai/openai
+          prompt_template:
+            - id: system_prompt
+              role: system
+              text: |-
+                你是旅游销售培训中的 AI 模拟客户。你要扮演真实客户，而不是老师。
+
+                扮演规则：
+                1. 根据客户画像回应学生，语言自然，有真实顾虑和情绪。
+                2. 客户需求可以逐步显露，不要一开始把预算、偏好、顾虑全部说完。
+                3. 如果学生追问到位，可以透露更多真实需求；如果学生只推产品，要表现犹豫或提出异议。
+                4. 难度越高，客户越模糊、挑剔或经验丰富。
+                5. 不要替学生完成销售推荐。
+                6. 输出中文。
+            - id: user_prompt
+              role: user
+              text: |-
+                训练场景：
+                {{#start_node.scenario#}}
+
+                客户画像：
+                {{#start_node.customer_profile#}}
+
+                训练目标：
+                {{#start_node.training_goal#}}
+
+                难度：
+                {{#start_node.difficulty#}}
+
+                辅导模式：
+                {{#start_node.coaching_mode#}}
+
+                历史对话：
+                {{#start_node.conversation_history#}}
+
+                学生最新表达：
+                {{#start_node.student_message#}}
+
+                请输出：
+                【客户回复】
+                用客户身份直接回应学生，控制在 1 到 4 句话。
+
+                【客户状态】
+                用短句描述当前客户的信任度、需求清晰度、主要顾虑。
+
+                【教学信号】
+                如果辅导模式包含“提示”或“coach”，给教师端返回学生本轮表现观察；否则写“无”。
+          selected: false
+          title: 模拟客户回应
+          type: llm
+          variables: []
+          vision:
+            enabled: false
+          x-outputs:
+            - name: text
+              type: string
+        height: 98
+        id: llm_node
+        position:
+          x: 320
+          y: 0
+        positionAbsolute:
+          x: 320
+          y: 0
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+      - data:
+          desc: 输出客户回复和教学信号。
+          outputs:
+            - value_selector:
+                - llm_node
+                - text
+              variable: customer_reply
+          selected: false
+          title: 结束
+          type: end
+          x-outputs:
+            - name: customer_reply
+              type: string
+        height: 90
+        id: end_node
+        position:
+          x: 640
+          y: 0
+        positionAbsolute:
+          x: 640
+          y: 0
+        selected: false
+        sourcePosition: right
+        targetPosition: left
+        type: custom
+        width: 244
+    viewport:
+      x: 0
+      y: 0
+      zoom: 1
