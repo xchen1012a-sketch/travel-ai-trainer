@@ -326,14 +326,6 @@ public class TeachAgentServer {
       List<Map<String, Object>> messages = messagesByConversation.computeIfAbsent(conversationId, key -> new ArrayList<>());
       messages.add(studentMessage);
 
-      Map<String, Object> agentMessage = entity(messageIds.incrementAndGet());
-      agentMessage.put("conversationId", conversationId);
-      agentMessage.put("senderType", "AGENT");
-      agentMessage.put("content", "已收到你的问题。Dify 接入完成后，这里会返回智能体的真实回复。");
-      agentMessage.put("contentType", "TEXT");
-      agentMessage.put("difyTaskId", UUID.randomUUID().toString());
-      messages.add(agentMessage);
-
       String now = Instant.now().toString();
       conversation.put("lastMessageAt", now);
       conversation.put("updatedAt", now);
@@ -341,7 +333,7 @@ public class TeachAgentServer {
       return Map.of(
         "conversationId", conversationId,
         "studentMessage", studentMessage,
-        "agentMessage", agentMessage
+        "agentMessageStatus", "PENDING_DIFY"
       );
     }
 

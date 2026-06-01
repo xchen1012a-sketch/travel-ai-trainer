@@ -196,6 +196,45 @@ CREATE TABLE interaction_tasks (
   CONSTRAINT fk_interaction_tasks_agent FOREIGN KEY (agent_id) REFERENCES agents (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
+CREATE TABLE workflow_configs (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  teacher_id BIGINT NOT NULL,
+  workflow_key VARCHAR(64) NOT NULL,
+  name VARCHAR(128) NOT NULL,
+  base_url VARCHAR(255) NOT NULL DEFAULT 'https://api.dify.ai/v1',
+  workflow_id VARCHAR(128) NOT NULL,
+  api_key_ciphertext TEXT NULL,
+  api_key_last4 VARCHAR(8) NULL,
+  enabled TINYINT(1) NOT NULL DEFAULT 1,
+  last_test_status ENUM('UNTESTED', 'SUCCESS', 'FAILED') NOT NULL DEFAULT 'UNTESTED',
+  last_test_message VARCHAR(512) NULL,
+  last_test_at DATETIME NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted_at DATETIME NULL,
+  UNIQUE KEY uk_workflow_configs_teacher_key (teacher_id, workflow_key),
+  KEY idx_workflow_configs_teacher_enabled (teacher_id, enabled),
+  CONSTRAINT fk_workflow_configs_teacher FOREIGN KEY (teacher_id) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE agent_workflows (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  agent_id BIGINT NOT NULL,
+  workflow_key VARCHAR(64) NOT NULL,
+  workflow_config_id BIGINT NULL,
+  custom_workflow_id VARCHAR(128) NULL,
+  custom_api_key_ciphertext TEXT NULL,
+  custom_api_key_last4 VARCHAR(8) NULL,
+  enabled TINYINT(1) NOT NULL DEFAULT 1,
+  sort_order INT NOT NULL DEFAULT 0,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_agent_workflows_agent_key (agent_id, workflow_key),
+  KEY idx_agent_workflows_config (workflow_config_id),
+  CONSTRAINT fk_agent_workflows_agent FOREIGN KEY (agent_id) REFERENCES agents (id),
+  CONSTRAINT fk_agent_workflows_config FOREIGN KEY (workflow_config_id) REFERENCES workflow_configs (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
 CREATE TABLE task_submissions (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   task_id BIGINT NOT NULL,
@@ -243,4 +282,75 @@ CREATE TABLE audit_logs (
   KEY idx_audit_logs_actor_created (actor_id, created_at),
   KEY idx_audit_logs_target (target_type, target_id),
   CONSTRAINT fk_audit_logs_actor FOREIGN KEY (actor_id) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE products (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  teacher_id BIGINT NOT NULL,
+  name VARCHAR(128) NOT NULL,
+  route_name VARCHAR(128) NULL,
+  old_info TEXT NULL,
+  new_info TEXT NULL,
+  product_context TEXT NULL,
+  change_summary TEXT NULL,
+  change_status ENUM('PENDING', 'GENERATED', 'FAILED') NOT NULL DEFAULT 'PENDING',
+  context_status ENUM('DRAFT', 'READY', 'STALE') NOT NULL DEFAULT 'DRAFT',
+  status ENUM('ACTIVE', 'ARCHIVED') NOT NULL DEFAULT 'ACTIVE',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted_at DATETIME NULL,
+  KEY idx_products_teacher_status (teacher_id, status),
+  CONSTRAINT fk_products_teacher FOREIGN KEY (teacher_id) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE attraction_speeches (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  teacher_id BIGINT NOT NULL,
+  attraction_name VARCHAR(128) NOT NULL,
+  geography_type VARCHAR(64) NULL,
+  culture_tags VARCHAR(255) NULL,
+  customer_experience_level VARCHAR(64) NULL,
+  customer_scene TEXT NULL,
+  selling_goal TEXT NULL,
+  attraction_basic_info TEXT NULL,
+  course_context TEXT NULL,
+  speech_content TEXT NULL,
+  tag_status ENUM('PENDING', 'TAGGED') NOT NULL DEFAULT 'PENDING',
+  speech_status ENUM('PENDING', 'GENERATED', 'STALE') NOT NULL DEFAULT 'PENDING',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted_at DATETIME NULL,
+  KEY idx_attraction_speeches_teacher (teacher_id),
+  CONSTRAINT fk_attraction_speeches_teacher FOREIGN KEY (teacher_id) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE customer_profiles (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  teacher_id BIGINT NOT NULL,
+  name VARCHAR(128) NOT NULL,
+  profile_type VARCHAR(64) NULL,
+  profile_content TEXT NULL,
+  shared_by VARCHAR(255) NULL,
+  status ENUM('ACTIVE', 'ARCHIVED') NOT NULL DEFAULT 'ACTIVE',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted_at DATETIME NULL,
+  KEY idx_customer_profiles_teacher_status (teacher_id, status),
+  CONSTRAINT fk_customer_profiles_teacher FOREIGN KEY (teacher_id) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+CREATE TABLE training_scenarios (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  teacher_id BIGINT NOT NULL,
+  name VARCHAR(128) NOT NULL,
+  training_goal VARCHAR(255) NULL,
+  difficulty ENUM('入门', '进阶', '挑战') NOT NULL DEFAULT '入门',
+  coaching_mode ENUM('少提示', '即时提示', '复盘提示') NOT NULL DEFAULT '即时提示',
+  description TEXT NULL,
+  status ENUM('ACTIVE', 'ARCHIVED') NOT NULL DEFAULT 'ACTIVE',
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  deleted_at DATETIME NULL,
+  KEY idx_training_scenarios_teacher_status (teacher_id, status),
+  CONSTRAINT fk_training_scenarios_teacher FOREIGN KEY (teacher_id) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

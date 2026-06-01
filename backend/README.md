@@ -60,6 +60,50 @@ bash scripts/test_api.sh
 - `POST /api/class-members/join`
 - `POST /api/conversations`
 - `POST /api/messages`
+- `GET /api/workflow-configs?teacherId=1`
+- `POST /api/workflow-configs`
+- `POST /api/workflow-configs/test`
+
+## Dify 工作流配置接口
+
+保存配置：
+
+```bash
+curl -X POST http://localhost:8080/api/workflow-configs \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "teacherId": "1",
+    "workflowKey": "course-qa",
+    "name": "课程问答",
+    "baseUrl": "https://api.dify.ai/v1",
+    "workflowId": "你的 Dify Workflow ID",
+    "apiKey": "你的 Dify API Key",
+    "enabled": "true"
+  }'
+```
+
+查询配置：
+
+```bash
+curl 'http://localhost:8080/api/workflow-configs?teacherId=1'
+```
+
+测试连接：
+
+```bash
+curl -X POST http://localhost:8080/api/workflow-configs/test \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "teacherId": "1",
+    "workflowKey": "course-qa"
+  }'
+```
+
+说明：
+
+- `apiKey` 只在保存时提交，查询接口不会返回明文。
+- 当前开发版用 `{plain}` 占位保存密钥，生产环境请替换为加密存储或 KMS。
+- 测试接口会用 `Authorization: Bearer <apiKey>` 请求 Dify 的 `/parameters` 端点。
 
 ## 说明
 

@@ -5,6 +5,8 @@
 .env
 .env.*
 !.env.example
+frontend/.env.local
+frontend/.env.*.local
 
 # Frontend dependencies and build output
 node_modules/
@@ -15,6 +17,23 @@ frontend/dist/
 # Java/Maven build output
 backend/target/
 backend/out/
+backend/META-INF/
+*.class
+*.jar
+
+# Logs and local runtime files
+*.log
+*.err.log
+backend/*.log
+backend/*.err.log
+frontend/*.log
+frontend/*.err.log
+
+# IDE and OS files
+.idea/
+backend/.idea/
+.vscode/
+Thumbs.db
 
 # Local MySQL runtime data
 mysql-dev/data/
